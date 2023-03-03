@@ -30,6 +30,7 @@ class RemixServer {
                 this.userToRemixes = this.partitionByUser(this.allRemixes);
                 if (log) {
                     console.log("finished refreshing. total users=%s total remixes = %s", Object.keys(this.userToRemixes).length, this.allRemixes.length);
+                    console.log(Object.keys(this.userToRemixes));
                 }
             }
             catch (e) {
@@ -85,7 +86,7 @@ class RemixServer {
         return __awaiter(this, void 0, void 0, function* () {
             let count = ++this.count;
             console.log("update called count=%s", count);
-            yield this.refresh(false);
+            yield this.refresh(true);
             while (this.count > this.allRemixes.length) {
                 if (count < this.count) {
                     // another update call has happened so stop this
@@ -93,7 +94,7 @@ class RemixServer {
                     return;
                 }
                 yield sleep(15000);
-                yield this.refresh(false);
+                yield this.refresh(true);
             }
             console.log("change is accounted for");
             console.log("this.count=%s allRemixes.length=%s", this.count, this.allRemixes.length);
@@ -102,7 +103,7 @@ class RemixServer {
     }
     refreshLoop() {
         setInterval(() => {
-            this.refresh(false);
+            this.refresh(true);
         }, REFRESH_TIME);
     }
 }
@@ -124,6 +125,10 @@ const sleep = (ms) => {
  ******* 5. Compares results to see if its changed. Keep refreshing until all changes are reflected
  */
 let server = new RemixServer();
+if (process.argv[2]) {
+    console.log('setting api key=', process.argv[2]);
+    (0, dist_1.setZoraApiKey)(process.argv[2]);
+}
 server.init();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());

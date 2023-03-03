@@ -1,4 +1,4 @@
-import {ZporeRemix, fetchZporeRemixes} from "spores-events/dist";
+import {setZoraApiKey, ZporeRemix, fetchZporeRemixes} from "spores-events/dist";
 import express from 'express';
 
 const REFRESH_TIME = 2 * 60 * 1000; // every 2 mins call refresh
@@ -32,6 +32,7 @@ class RemixServer {
             this.userToRemixes = this.partitionByUser(this.allRemixes);
             if (log) {
                 console.log("finished refreshing. total users=%s total remixes = %s", Object.keys(this.userToRemixes).length, this.allRemixes.length);
+                console.log(Object.keys(this.userToRemixes));
             }
         } catch (e) {
             console.log("error fetching remixes from zora api");
@@ -88,7 +89,7 @@ class RemixServer {
     async update() {
         let count = ++this.count;
         console.log("update called count=%s", count);
-        await this.refresh(false);
+        await this.refresh(true);
         while (this.count > this.allRemixes.length) {
             if (count < this.count) {
                 // another update call has happened so stop this
@@ -96,7 +97,7 @@ class RemixServer {
                 return;
             }
             await sleep(15000);
-            await this.refresh(false);
+            await this.refresh(true);
         }
         console.log("change is accounted for");
         console.log("this.count=%s allRemixes.length=%s", this.count, this.allRemixes.length);
@@ -105,7 +106,7 @@ class RemixServer {
 
     refreshLoop() {
         setInterval(() => {
-            this.refresh(false);
+            this.refresh(true);
         }, REFRESH_TIME);
     }
 }
@@ -130,6 +131,11 @@ const sleep = ( ms: number) : Promise<void> => {
  ******* 5. Compares results to see if its changed. Keep refreshing until all changes are reflected
  */
 let server = new RemixServer();
+
+if (process.argv[2]) {
+    console.log('setting api key=', process.argv[2]);
+    setZoraApiKey(process.argv[2]);
+}
 server.init();
 
 const app = express();
